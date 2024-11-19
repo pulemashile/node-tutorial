@@ -1,148 +1,64 @@
-// const http = require('http');
+const http = require('http');
 
-// const server = http.createServer((req, res) => {
-//     res.end('Hello World');
-// })
 
-// server.listen(5000, () => {
-//     console.log('Server listening at port 5000');
-// })
+const PORT = 5000;
 
-// const http = require('http');
+// Create the server
+const server = http.createServer((req, res) => {
+  // Set a default response header (common for all routes)
+  res.setHeader('Content-Type', 'application/json');
 
-// const server = http.createServer((req, res) => {
-//     if(req.url === '/'){
-//         res.end('This is my Home Page');
-//     } else if(req.url === '/about'){
-//         res.end('This is my About Page');
-//     } else if(req.url === '/contact'){
-//         res.end('This is my Contact Page');
-//     } else {
-//         res.end('404, Resource Not Found');
-//     }
-// })
-
-// server.listen(5000, () => {
-//     console.log('Server listening at port 5000');
-// })
-
-// const http = require('http');
-// const fs= require('fs')
-
-// const server = http.createServer((req, res) => {
-//   let filepath = './public';
-
-//   switch (req.url) {
-//     case "/":
-//       filepath += "/index.html";
-//       break;
-
-//     case "/about":
-//       filepath += "/about.html";
-//       break;
-
-//     case "/contact":
-//       filepath += "/contact.html";
-//       break;
-
-//     default:
-//       filepath += "/404.html";
-//       res.statusCode = 404;
-//       break;
-//   }
-
-//   fs.readFile(filepath, (err, data) => {
-//     if (err) {
-//       res.end("Internal Server Error");
-//       console.log(err);
-//     } else {
-//       res.end(data);
-//     }
-//   });
-// });
-
-// server.listen(5000, () => {
-//   console.log("Server is running on port 5000");
-// });
-
-const rs = require("readline-sync");
-
-let score = 0;
-
-// Ask for the user's name
-let username = rs.question("Please enter your name: ");
-console.log("Welcome, " + username + " to the Cricket Quiz App!");
-
-// Define the questions with a time limit
-let questions = [
-  {
-    question: 'Who is known as the "God of Cricket"? ',
-    answer: 'Sachin Tendulkar',
-    timeLimit: 5000, // 5 seconds
-  },
-  {
-    question: 'How many players are there in a cricket team? ',
-    answer: '11',
-    timeLimit: 3000, // 3 seconds
-  },
-  {
-    question: 'What is the maximum number of overs in a One Day International (ODI)? ',
-    answer: '50',
-    timeLimit: 4000, // 4 seconds
-  },
-  {
-    question: 'Which country won the first Cricket World Cup? ',
-    answer: 'England',
-    timeLimit: 5000, // 5 seconds
-  },
-  {
-    question: 'Who has the record for the highest individual score in Test cricket? ',
-    answer: 'Brian Lara',
-    timeLimit: 6000, // 6 seconds
-  },
-];
-
-// Function to ask a timed question
-const askTimedQuestion = (questionObj) => {
-  return new Promise((resolve) => {
-    let timer;
-
-    console.log(`${questionObj.question} (You have ${questionObj.timeLimit / 1000} seconds to answer.)`);
-    
-    // Set a timer to automatically resolve if the user doesn't answer in time
-    timer = setTimeout(() => {
-      console.log("Time's up! Moving to the next question...");
-      resolve(null); // No answer given
-    }, questionObj.timeLimit);
-
-    // Ask the question and wait for the answer
-    let userAnswer = rs.question('');
-
-    clearTimeout(timer); // Clear the timer if answered in time
-    resolve(userAnswer); // Resolve with the user's answer
-  });
-};
-
-// Function to start the quiz
-const startQuiz = async () => {
-  for (const question of questions) {
-    const userAnswer = await askTimedQuestion(question);
-
-    // Check if the answer is correct
-    if (userAnswer === null) {
-      console.log("You didn't answer in time.");
-    } else if (userAnswer.trim().toLowerCase() === question.answer.toLowerCase()) {
-      console.log("Correct!");
-      score++;
+  // Handle routes and HTTP methods
+  if (req.method === 'GET') {
+  // we use req.url to check which url the cleint is requesting,if the request for the ruote is/ then all is well the res.send send a message back to the client
+    if (req.url === '/') {
+      // Root route (GET /)
+      res.statusCode = 200;
+      res.end(JSON.stringify({ message: 'Welcome to the Node.js Server!' }));
+    } else if (req.url === '/about') {
+      // About route (GET /about)
+      
+      res.statusCode = 200;
+      res.end(JSON.stringify({ message: 'This is a basic Node.js server with routing.' }));
     } else {
-      console.log("Wrong! The correct answer is: " + question.answer);
+      // 404 Not Found for unknown routes
+      res.statusCode = 404;
+      res.end(JSON.stringify({ error: 'Route not found' }));
     }
-    console.log(); // Blank line between questions
+  } else if (req.method === 'POST') {
+    // Sometimes, a client (like Postman or a form on a webpage) sends data to the server. We use a POST request for that.so 
+    //If the client makes a POST request to /data, we collect the data sent by the client (req.on('data')).
+//After receiving all the data, we send a response back to the client with the message "Data received" and the data they sent.
+    if (req.url === '/data') {
+      let body = '';
+
+      // Collect data from the incoming request
+      req.on('data', chunk => {
+        body += chunk;
+        //What It Does:
+//Listens for incoming data: When a client sends a POST request with data, it often arrives in multiple chunks (especially for large data).
+//Accumulates the data: The data event handler collects each chunk of data and adds it to the body variable. Over time, all chunks are combined into one complete piece of data.
+//Waits for the complete request: After all chunks are received, the 'end' event is triggered, signaling that the entire data has been received and can now be processed.
+      });
+
+      // Once the full body is received, process it
+      req.on('end', () => {
+        res.statusCode = 200;
+        res.end(JSON.stringify({ message: 'Data received', data: JSON.parse(body) }));
+      });
+    } else {
+      // 404 Not Found for unknown POST routes
+      res.statusCode = 404;
+      res.end(JSON.stringify({ error: 'Route not found' }));
+    }
+  } else {
+    // Handle unsupported HTTP methods (e.g., PUT, DELETE)
+    res.statusCode = 405; // Method Not Allowed
+    res.end(JSON.stringify({ error: 'Method Not Allowed' }));
   }
+});
 
-  // Display final score
-  console.log(`Quiz complete! Your score is: ${score} out of ${questions.length}.`);
-};
-
-// Start the quiz
-startQuiz();
+// Start the server and listen on the specified port
+server.listen(PORT, () => {
+  console.log(`Server is running at http://localhost:${PORT}/`);
+});
